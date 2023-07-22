@@ -13,12 +13,21 @@ using ll = long long;
 constexpr int Width = 640;
 constexpr int Height = 480;
 constexpr int Interval = 10;
-constexpr pair<tuple<int, int, int>, tuple<int, int, int>> OverviewPos = { { 0, 0, 100 }, { 0, 0, 0 } };
+
+// Keyboard
+constexpr int Key_Nothing = 0;
+constexpr int Key_Enter = 13;
+constexpr int Key_Space = 32;
+constexpr int Key_Left = 100;
+constexpr int Key_Up = 101;
+constexpr int Key_Right = 102;
+constexpr int Key_Down = 103;
 
 // State
 enum GameState
 {
   GameStart,
+  GameStartPlayingTransition,
   GamePlaying,
   GameOver,
   GameClear
@@ -26,6 +35,7 @@ enum GameState
 struct State {
   GameState gameState = GameStart;
   ll time = 0;
+  int key = Key_Nothing;
 };
 State state = State();
 
@@ -79,6 +89,12 @@ void display_GameStart() {
     drawString("(c) 2023 Asa", -size / 2, -30, 0, size, 1);
   }
   glPopMatrix();
+
+  // Press Enter
+  if (state.time > 3000 && state.key == Key_Enter) {
+    state.gameState = GameStartPlayingTransition;
+    state.time = 0;
+  }
 }
 
 void display() {
@@ -119,6 +135,20 @@ void display() {
   glutSwapBuffers();
 }
 
+void handleKeyboard(int key, int x, int y) {
+  switch (key) {
+    case GLUT_KEY_UP: state.key = Key_Up; break;
+    case GLUT_KEY_DOWN: state.key = Key_Down; break;
+    case GLUT_KEY_LEFT: state.key = Key_Left; break;
+    case GLUT_KEY_RIGHT: state.key = Key_Right; break;
+    case 32: state.key = Key_Space; break;
+    case 13: state.key = Key_Enter; break;
+  }
+}
+void handleKeyboardUp(int key, int x, int y) { state.key = Key_Nothing; }
+void handleKeyboard(unsigned char key, int x, int y) { handleKeyboard((int) key, x, y); }
+void handleKeyboardUp(unsigned char key, int x, int y) { handleKeyboardUp((int) key, x, y); }
+
 int main(int argc, char* argv[]) {
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
@@ -130,8 +160,13 @@ int main(int argc, char* argv[]) {
   glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glutIgnoreKeyRepeat(GL_TRUE);
 
   glutDisplayFunc(display);
+  glutKeyboardFunc(handleKeyboard);
+  glutKeyboardUpFunc(handleKeyboardUp);
+  glutSpecialFunc(handleKeyboard);
+  glutSpecialUpFunc(handleKeyboardUp);
   glutTimerFunc(Interval, timer, 10);
   glutMainLoop();
   return 0;
