@@ -2,7 +2,8 @@
 #include <string>
 #include <tuple>
 
-#include <glut.h>
+#include "animation.h"
+#include "glut.h"
 
 using namespace std;
 using ll = long long;
@@ -27,11 +28,6 @@ struct State {
 };
 State state = State();
 
-inline double bezier(double t, const double p1, const double p2, const double p3, const double p4) {
-  t = min(1.0, max(0.0, t));
-  return pow(1 - t, 3) * p1 + 3 * pow(1 - t, 2) * t * p2 + 3 * (1 - t) * pow(t, 2) * p3 + pow(t, 3) * p4;
-}
-
 void timer(int t) {
   glutPostRedisplay();
   glutTimerFunc(Interval, timer, 20);
@@ -52,7 +48,7 @@ void display_GameStart() {
   {
     glColor3d(0, 0, 0);
     double t = (double) (state.time - ScrollStart) / ScrollDuration;
-    double y = bezier(t, 0, 0, dest * 0.58, dest);  // ease-out
+    double y = Animation::easeOut(t) * dest;
     const string title = "MineSweeper";
     const int titleWidth = glutStrokeLength(GLUT_STROKE_ROMAN, (const unsigned char*) title.c_str());
     const double scale = 30.0 / titleWidth;

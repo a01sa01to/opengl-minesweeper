@@ -40,7 +40,7 @@ DeriveLineEnding: true
 DerivePointerAlignment: true
 DisableFormat: false
 EmptyLineBeforeAccessModifier: Always
-IncludeBlocks: Regroup
+IncludeBlocks: Preserve
 IndentCaseBlocks: true
 IndentCaseLabels: true
 IndentExternBlock: Indent
