@@ -4,6 +4,7 @@
 
 #include "animation.h"
 #include "glut.h"
+#include "string_util.h"
 
 using namespace std;
 using ll = long long;
@@ -41,20 +42,17 @@ void display_GameStart() {
   gluLookAt(0, 0, 100, 0, 0, 0, 0, 1, 0);
 
   // Title
-  constexpr int ScrollStart = 2000;
-  constexpr int ScrollDuration = 500;
-  constexpr int dest = 100;
   glPushMatrix();
   {
+    constexpr int ScrollStart = 2000;
+    constexpr int ScrollDuration = 500;
+    constexpr int StartSize = 100;
+    constexpr int EndSize = 50;
     glColor3d(0, 0, 0);
     double t = (double) (state.time - ScrollStart) / ScrollDuration;
-    double y = Animation::easeOut(t) * dest;
-    const string title = "MineSweeper";
-    const int titleWidth = glutStrokeLength(GLUT_STROKE_ROMAN, (const unsigned char*) title.c_str());
-    const double scale = 30.0 / titleWidth;
-    glScaled(scale, scale, scale);
-    glTranslated(-titleWidth / 2, y, 0);
-    for (char c : title) glutStrokeCharacter(GLUT_STROKE_ROMAN, c);
+    double y = Animation::easeOut(t);
+    double size = Animation::easeOut(t) * (EndSize - StartSize) + StartSize;
+    drawString("MineSweeper", -size / 2, y * 20, 0, size);
   }
   glPopMatrix();
 }
