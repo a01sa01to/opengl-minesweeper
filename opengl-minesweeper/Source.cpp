@@ -1,3 +1,4 @@
+#include <numeric>
 #include <string>
 #include <tuple>
 
@@ -7,7 +8,9 @@ using namespace std;
 using ll = long long;
 
 // Settings
-constexpr int Interval = 20;
+constexpr int Width = 640;
+constexpr int Height = 480;
+constexpr int Interval = 10;
 constexpr pair<tuple<int, int, int>, tuple<int, int, int>> OverviewPos = { { 0, 0, 100 }, { 0, 0, 0 } };
 
 // State
@@ -24,45 +27,52 @@ struct State {
 };
 State state = State();
 
+inline double bezier(double t, const double p1, const double p2, const double p3, const double p4) {
+  t = min(1.0, max(0.0, t));
+  return pow(1 - t, 3) * p1 + 3 * pow(1 - t, 2) * t * p2 + 3 * (1 - t) * pow(t, 2) * p3 + pow(t, 3) * p4;
+}
+
 void timer(int t) {
   glutPostRedisplay();
   glutTimerFunc(Interval, timer, 20);
-}
-
-void reshape(int w, int h) {
-  // Initialize
-  glViewport(0, 0, w, h);
-
-  // Projection
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  gluPerspective(50, (double) w / h, 1, 1000);
 }
 
 void display_GameStart() {
   // Model view
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
+  //gluLookAt(Width / 2, Height / 2, 100, Width / 2, Height / 2, 0, 0, 1, 0);
   gluLookAt(0, 0, 100, 0, 0, 0, 0, 1, 0);
 
   // Title
+  constexpr int ScrollStart = 2000;
+  constexpr int ScrollDuration = 500;
+  constexpr int dest = 100;
   glPushMatrix();
   {
     glColor3d(0, 0, 0);
-    if (state.time < 2000) {
-      glRasterPos3d(0, 0, 0);
-    }
-    else {
-      double y = min(30.0, (state.time - 1000) / 1000.0 * 30);
-      glRasterPos3d(0, y, 0);
-    }
+    double t = (double) (state.time - ScrollStart) / ScrollDuration;
+    double y = bezier(t, 0, 0, dest * 0.58, dest);  // ease-out
     const string title = "MineSweeper";
-    for (char c : title) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+    const int titleWidth = glutStrokeLength(GLUT_STROKE_ROMAN, (const unsigned char*) title.c_str());
+    const double scale = 30.0 / titleWidth;
+    glScaled(scale, scale, scale);
+    glTranslated(-titleWidth / 2, y, 0);
+    for (char c : title) glutStrokeCharacter(GLUT_STROKE_ROMAN, c);
   }
   glPopMatrix();
 }
 
 void display() {
+  // Initialize
+  glutReshapeWindow(Width, Height);
+  glViewport(0, 0, Width, Height);
+
+  // Projection
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  gluPerspective(50, (double) Width / Height, 1, 1000);
+
   // Clear
   glClearColor(1, 1, 1, 1);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -86,15 +96,16 @@ void display() {
     state.time += 3000;
   }
 
+  printf("\r%lld", state.time);
+
   glutSwapBuffers();
 }
 
 int main(int argc, char* argv[]) {
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
-  glutInitWindowSize(640, 480);
+  glutInitWindowSize(Width, Height);
   glutCreateWindow("MineSweeper");
-  glutReshapeFunc(reshape);
   glutDisplayFunc(display);
   glutTimerFunc(Interval, timer, 10);
   glShadeModel(GL_SMOOTH);
