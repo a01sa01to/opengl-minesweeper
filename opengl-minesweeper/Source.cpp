@@ -57,8 +57,10 @@ void display_GameStart() {
     constexpr int ScrollDuration = 500;
     constexpr int StartSize = 100;
     constexpr int EndSize = 50;
-    glColor3d(0, 0, 0);
+    double alpha = 1 - (state.gameState == GameStartPlayingTransition ? state.time / 500.0 : 0);
+    glColor4d(0, 0, 0, alpha);
     double t = (double) (state.time - ScrollStart) / ScrollDuration;
+    if (state.gameState == GameStartPlayingTransition) t = 1;
     double s = Animation::easeOut(t);
     double size = s * (EndSize - StartSize) + StartSize;
     drawString("MineSweeper", -size / 2, s * 20, 0, size, 2);
@@ -73,6 +75,7 @@ void display_GameStart() {
     constexpr int size = 36;
     double t = (double) (state.time - ShowStart) / OpacityDuration;
     double opacity = Animation::easeOut(t);
+    if (state.gameState == GameStartPlayingTransition) opacity = 1 - (double) state.time / OpacityDuration;
     glColor4d(0, 0, 0, opacity);
     drawString("Press Enter to Start", -size / 2, -20, 0, size, 1);
   }
@@ -85,6 +88,7 @@ void display_GameStart() {
     constexpr int size = 16;
     double t = (double) (state.time - ShowStart) / OpacityDuration;
     double opacity = Animation::linear(t);
+    if (state.gameState == GameStartPlayingTransition) opacity = 1 - (double) state.time / OpacityDuration;
     glColor4d(0, 0, 1, opacity);
     drawString("(c) 2023 Asa", -size / 2, -30, 0, size, 1);
   }
@@ -95,6 +99,22 @@ void display_GameStart() {
     state.gameState = GameStartPlayingTransition;
     state.time = 0;
   }
+}
+
+void display_Playing() {
+  // Model view
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  gluLookAt(0, 0, 100, 0, 0, 0, 0, 1, 0);
+
+  if (state.gameState == GameStartPlayingTransition && state.time < 750) return;
+  if (state.gameState == GameStartPlayingTransition) state.gameState = GamePlaying;
+  glPushMatrix();
+  {
+    constexpr int size = 50;
+    drawString("Playing", -size / 2, 0, 0, size, 1);
+  }
+  glPopMatrix();
 }
 
 void display() {
@@ -122,6 +142,13 @@ void display() {
   // Draw
   if (state.gameState == GameStart) {
     display_GameStart();
+  }
+  else if (state.gameState == GameStartPlayingTransition) {
+    display_GameStart();
+    display_Playing();
+  }
+  else if (state.gameState == GamePlaying) {
+    display_Playing();
   }
 
   state.time += Interval;
