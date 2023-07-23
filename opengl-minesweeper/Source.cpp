@@ -21,23 +21,38 @@ constexpr uint Height = 480;
 constexpr uint Interval = 10;
 
 // Keyboard
-constexpr uint Key_Nothing = 0;
-constexpr uint Key_Enter = 13;
-constexpr uint Key_Space = 32;
-constexpr uint Key_Left = 100;
-constexpr uint Key_Up = 101;
-constexpr uint Key_Right = 102;
-constexpr uint Key_Down = 103;
+constexpr uint KeyBit = 7;
+constexpr uint Key_Enter = 0;
+constexpr uint Key_Space = 1;
+constexpr uint Key_Question = 2;
+constexpr uint Key_Left = 3;
+constexpr uint Key_Up = 4;
+constexpr uint Key_Right = 5;
+constexpr uint Key_Down = 6;
 
 // Grid
 constexpr uint GridWidth = 15;
 constexpr uint GridHeight = 10;
 constexpr uint GridBit = 4;
 constexpr uint BombCount = (GridWidth * GridHeight) * 15 / 100;  // 15%
-constexpr bitset<GridBit> Grid_Open(0b0001);
-constexpr bitset<GridBit> Grid_Question(0b0010);
-constexpr bitset<GridBit> Grid_Flag(0b0100);
-constexpr bitset<GridBit> Grid_Bomb(0b1000);
+constexpr uint Grid_Open = 0;
+constexpr uint Grid_Question = 1;
+constexpr uint Grid_Flag = 2;
+constexpr uint Grid_Bomb = 3;
+
+// Test
+static_assert(Key_Enter < KeyBit);
+static_assert(Key_Space < KeyBit);
+static_assert(Key_Question < KeyBit);
+static_assert(Key_Left < KeyBit);
+static_assert(Key_Up < KeyBit);
+static_assert(Key_Right < KeyBit);
+static_assert(Key_Down < KeyBit);
+static_assert(BombCount < GridWidth * GridHeight);
+static_assert(Grid_Open < GridBit);
+static_assert(Grid_Question < GridBit);
+static_assert(Grid_Flag < GridBit);
+static_assert(Grid_Bomb < GridBit);
 
 // State
 enum GameState
@@ -51,7 +66,7 @@ enum GameState
 struct State {
   GameState gameState = GameStart;
   ll time = 0;
-  int key = Key_Nothing;
+  bitset<KeyBit> key = 0;
   array<array<bitset<GridBit>, GridWidth>, GridHeight> grid;
   pair<int, int> cursor = { 0, 0 };
   tuple<double, double, double> cameraTo = { 0, 0, 100 };
@@ -116,7 +131,7 @@ void display_GameStart() {
   glPopMatrix();
 
   // Press Enter
-  if (state.time > 3000 && state.key == Key_Enter) {
+  if (state.time > 3000 && state.key.test(Key_Enter)) {
     state.gameState = GameStartPlayingTransition;
     state.time = 0;
   }
@@ -140,7 +155,7 @@ void display_Playing() {
   rep(i, GridHeight) rep(j, GridWidth) {
     double x = StartX + SquareWidth * j;
     double y = StartY + SquareHeight * i;
-    if ((state.grid[i][j] & Grid_Open).none()) {
+    if (!state.grid[i][j].test(Grid_Open)) {
       glPushMatrix();
       {
         glColor3d(0.5, 0.5, 0.5);
@@ -188,7 +203,7 @@ void display_Playing() {
   glPopMatrix();
 
   // (test) Camera
-  if (state.key == Key_Space) {
+  if (state.key.test(Key_Space)) {
     double x = StartX + SquareWidth * state.cursor.second + SquareWidth / 2;
     double y = StartY + SquareHeight * state.cursor.first + SquareHeight / 2;
     state.cameraTo = make_tuple(x, y, 30);
@@ -255,7 +270,7 @@ void display() {
   }
 
   // Scaling
-  if (state.key == Key_Nothing) {
+  if (state.key.none()) {
     state.cameraTo = { 0, 0, 100 };
   }
 
@@ -265,28 +280,41 @@ void display() {
 void handleKeyboard(int key, int x, int y) {
   switch (key) {
     case GLUT_KEY_UP:
-      state.key = Key_Up;
+      state.key.set(Key_Up);
       state.cursor.first--;
       break;
     case GLUT_KEY_DOWN:
-      state.key = Key_Down;
+      state.key.set(Key_Down);
       state.cursor.first++;
       break;
     case GLUT_KEY_LEFT:
-      state.key = Key_Left;
+      state.key.set(Key_Left);
       state.cursor.second--;
       break;
     case GLUT_KEY_RIGHT:
-      state.key = Key_Right;
+      state.key.set(Key_Right);
       state.cursor.second++;
       break;
-    case 32: state.key = Key_Space; break;
-    case 13: state.key = Key_Enter; break;
+    case 32: state.key.set(Key_Space); break;
+    case 13: state.key.set(Key_Enter); break;
+    case 'Q':
+    case 'q': state.key.set(Key_Question); break;
   }
   state.cursor.first = max(0, min(state.cursor.first, (int) GridHeight - 1));
   state.cursor.second = max(0, min(state.cursor.second, (int) GridWidth - 1));
 }
-void handleKeyboardUp(int key, int x, int y) { state.key = Key_Nothing; }
+void handleKeyboardUp(int key, int x, int y) {
+  switch (key) {
+    case GLUT_KEY_UP: state.key.reset(Key_Up); break;
+    case GLUT_KEY_DOWN: state.key.reset(Key_Down); break;
+    case GLUT_KEY_LEFT: state.key.reset(Key_Left); break;
+    case GLUT_KEY_RIGHT: state.key.reset(Key_Right); break;
+    case 32: state.key.reset(Key_Space); break;
+    case 13: state.key.reset(Key_Enter); break;
+    case 'Q':
+    case 'q': state.key.reset(Key_Question); break;
+  }
+}
 void handleKeyboard(unsigned char key, int x, int y) { handleKeyboard((int) key, x, y); }
 void handleKeyboardUp(unsigned char key, int x, int y) { handleKeyboardUp((int) key, x, y); }
 
