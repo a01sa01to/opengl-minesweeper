@@ -21,7 +21,7 @@ using ll = long long;
 // Settings
 constexpr uint Width = 640;
 constexpr uint Height = 480;
-constexpr uint Interval = 50;
+constexpr uint Interval = 10;
 
 // Keyboard
 constexpr uint KeyBit = 6;
@@ -60,6 +60,8 @@ enum GameState
   GameStart,
   GameStartPlayingTransition,
   GamePlaying,
+  GameEndOverTransition,
+  GameEndClearTransition,
   GameOver,
   GameClear
 };
@@ -139,6 +141,17 @@ void display_GameStart() {
 }
 
 void display_Playing() {
+  if (state.gameState == GameEndClearTransition && state.time > 2000) {
+    state.gameState = GameClear;
+    state.time = 0;
+    return;
+  }
+  if (state.gameState == GameEndOverTransition && state.time > 2000) {
+    state.gameState = GameOver;
+    state.time = 0;
+    return;
+  }
+
   if (state.gameState == GameStartPlayingTransition && state.time < 750) return;
   if (state.gameState == GameStartPlayingTransition) {
     state.gameState = GamePlaying;
@@ -180,6 +193,9 @@ void display_Playing() {
     while (!que.empty()) {
       auto&& [i, j] = que.front();
       que.pop();
+      if (state.grid[i][j].test(Grid_Question)) continue;
+      if (state.grid[i][j].test(Grid_Flag)) continue;
+      if (state.grid[i][j].test(Grid_Bomb)) continue;
       state.grid[i][j].set(Grid_Open);
       int cnt = 0;
       for (int di = -1; di <= 1; di++) {
@@ -219,7 +235,17 @@ void display_Playing() {
       }
     }
 
-    if (!state.grid[i][j].test(Grid_Open)) {
+    if ((state.gameState == GameEndOverTransition || state.gameState == GameEndClearTransition) && state.grid[i][j].test(Grid_Bomb)) {
+      glPushMatrix();
+      glColor4d(1, 0, 0, Animation::easeOut(state.time / 500.0));
+      glTranslated(x, y, 0);
+      glTranslated(SquareWidth / 2, SquareHeight / 2, 0);
+      glScaled(1, (double) SquareHeight / SquareWidth, 1.0 / SquareWidth);
+      glutSolidCube(SquareWidth);
+      glPopMatrix();
+    }
+    else if (!state.grid[i][j].test(Grid_Open)) {
+      // Cover
       glPushMatrix();
       {
         glColor3d(0.5, 0.5, 0.5);
@@ -229,7 +255,10 @@ void display_Playing() {
         glutSolidCube(SquareWidth);
       }
       glPopMatrix();
+
       if (!state.isGridInitialized) continue;
+
+      // ?
       if (state.grid[i][j].test(Grid_Question)) {
         glPushMatrix();
         glColor3d(0, 0, 1);
@@ -237,20 +266,12 @@ void display_Playing() {
         drawMonoString("?", x, y + SquareHeight, 0, CharWidth, 2);
         glPopMatrix();
       }
+      // !
       else if (state.grid[i][j].test(Grid_Flag)) {
         glPushMatrix();
         glColor3d(1, 0, 0);
         glTranslated(SquareWidth / 2.5, -SquareHeight / 5, 0);
         drawMonoString("!", x, y + SquareHeight, 0, CharWidth, 2);
-        glPopMatrix();
-      }
-
-      // Debug
-      if (state.grid[i][j].test(Grid_Bomb)) {
-        glPushMatrix();
-        glColor3d(0, 0, 1);
-        glTranslated(SquareWidth / 4, -SquareHeight / 5, 0);
-        drawMonoString("B", x, y + SquareHeight, 0, CharWidth, 2);
         glPopMatrix();
       }
     }
@@ -354,7 +375,7 @@ void display() {
     display_GameStart();
     display_Playing();
   }
-  else if (state.gameState == GamePlaying) {
+  else if (state.gameState == GamePlaying || state.gameState == GameEndOverTransition || state.gameState == GameEndClearTransition) {
     display_Playing();
   }
 
@@ -406,12 +427,16 @@ void handleKeyboardSpUp(int key, int _x, int _y) {
 void handleKeyboard(unsigned char key, int _x, int _y) {
   auto&& [i, j] = state.cursor;
   switch (key) {
-    case 32: state.key.set(Key_Space); break;
-    case 13:
+    case 32: state.key.set(Key_Space); break;  // Space
+    case 13:                                   // Enter
       state.grid[i][j].reset(Grid_Question);
       state.grid[i][j].reset(Grid_Flag);
       state.grid[i][j].set(Grid_Open);
       state.key.set(Key_Enter);
+      if (state.grid[i][j].test(Grid_Bomb)) {
+        state.gameState = GameEndOverTransition;
+        state.time = 0;
+      }
       break;
     case 'F':
     case 'f':
