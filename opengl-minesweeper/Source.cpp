@@ -42,6 +42,18 @@ constexpr uint Grid_Question = 1;
 constexpr uint Grid_Flag = 2;
 constexpr uint Grid_Bomb = 3;
 
+constexpr array<tuple<double, double, double>, 9> Grid_FontColor = {
+  make_tuple(1, 1, 1),        // 0
+  make_tuple(0, 0.7, 1),      // 1
+  make_tuple(0, 0.7, 0.4),    // 2
+  make_tuple(0.9, 0.3, 0.2),  // 3
+  make_tuple(0.3, 0.2, 0.8),  // 4
+  make_tuple(1, 0.5, 0.4),    // 5
+  make_tuple(0, 0, 1),        // 6
+  make_tuple(0, 0.5, 0.5),    // 7
+  make_tuple(1, 0, 0)         // 8
+};
+
 // State
 enum GameState
 {
@@ -243,8 +255,9 @@ void display_Playing() {
       }
     }
     else {
+      auto&& [r, g, b] = Grid_FontColor.at(cnt);
       glPushMatrix();
-      glColor3d(0, 0, 1);
+      glColor3d(r, g, b);
       glTranslated(SquareWidth / 4, -SquareHeight / 5, 0);
       drawMonoString(to_string(cnt), x, y + SquareHeight, 0, CharWidth, 2);
       glPopMatrix();
