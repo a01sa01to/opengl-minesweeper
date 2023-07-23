@@ -1,3 +1,5 @@
+#include <array>
+#include <bitset>
 #include <numeric>
 #include <string>
 #include <tuple>
@@ -7,21 +9,31 @@
 #include "string_util.h"
 
 using namespace std;
+using uint = unsigned int;
 using ll = long long;
 
 // Settings
-constexpr int Width = 640;
-constexpr int Height = 480;
-constexpr int Interval = 10;
+constexpr uint Width = 640;
+constexpr uint Height = 480;
+constexpr uint Interval = 10;
 
 // Keyboard
-constexpr int Key_Nothing = 0;
-constexpr int Key_Enter = 13;
-constexpr int Key_Space = 32;
-constexpr int Key_Left = 100;
-constexpr int Key_Up = 101;
-constexpr int Key_Right = 102;
-constexpr int Key_Down = 103;
+constexpr uint Key_Nothing = 0;
+constexpr uint Key_Enter = 13;
+constexpr uint Key_Space = 32;
+constexpr uint Key_Left = 100;
+constexpr uint Key_Up = 101;
+constexpr uint Key_Right = 102;
+constexpr uint Key_Down = 103;
+
+// Grid
+constexpr uint GridWidth = 15;
+constexpr uint GridHeight = 10;
+constexpr uint GridBit = 4;
+constexpr bitset<GridBit> Grid_Open(0b0001);
+constexpr bitset<GridBit> Grid_Question(0b0010);
+constexpr bitset<GridBit> Grid_Flag(0b0100);
+constexpr bitset<GridBit> Grid_Bomb(0b1000);
 
 // State
 enum GameState
@@ -36,6 +48,7 @@ struct State {
   GameState gameState = GameStart;
   ll time = 0;
   int key = Key_Nothing;
+  array<array<bitset<GridBit>, GridWidth>, GridHeight> grid;
 };
 State state = State();
 
@@ -109,10 +122,25 @@ void display_Playing() {
 
   if (state.gameState == GameStartPlayingTransition && state.time < 750) return;
   if (state.gameState == GameStartPlayingTransition) state.gameState = GamePlaying;
+
+  // Draw Grid
+  constexpr int StartX = -50;
+  constexpr int StartY = 40;
+  constexpr int EndX = 50;
+  constexpr int EndY = -30;
+  constexpr double SquareWidth = (double) (EndX - StartX) / GridWidth;
+  constexpr double SquareHeight = (double) (EndY - StartY) / GridHeight;
   glPushMatrix();
   {
-    constexpr int size = 50;
-    drawString("Playing", -size / 2, 0, 0, size, 1);
+    glColor3d(0.3, 0.3, 0.3);
+    for (int i = 0; i <= GridWidth; i++) {
+      double x = StartX + SquareWidth * i;
+      glBegin(GL_LINES), glVertex3d(x, StartY, 0), glVertex3d(x, EndY, 0), glEnd();
+    }
+    for (int j = 0; j <= GridHeight; j++) {
+      double y = StartY + SquareHeight * j;
+      glBegin(GL_LINES), glVertex3d(StartX, y, 0), glVertex3d(EndX, y, 0), glEnd();
+    }
   }
   glPopMatrix();
 }
@@ -188,6 +216,9 @@ int main(int argc, char* argv[]) {
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glutIgnoreKeyRepeat(GL_TRUE);
+
+  // Temporary
+  state.gameState = GamePlaying;
 
   glutDisplayFunc(display);
   glutKeyboardFunc(handleKeyboard);
