@@ -54,8 +54,16 @@ struct State {
   int key = Key_Nothing;
   array<array<bitset<GridBit>, GridWidth>, GridHeight> grid;
   pair<int, int> cursor = { 0, 0 };
+  tuple<double, double, double> cameraTo = { 0, 0, 100 };
+  tuple<double, double, double> cameraNow = { 0, 0, 100 };
 };
 State state = State();
+
+template<typename T>
+inline T sign(T x) {
+  if (x == 0) return 0;
+  return x / abs(x);
+}
 
 void timer(int t) {
   glutPostRedisplay();
@@ -63,11 +71,6 @@ void timer(int t) {
 }
 
 void display_GameStart() {
-  // Model view
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
-  gluLookAt(0, 0, 100, 0, 0, 0, 0, 1, 0);
-
   // Title
   glPushMatrix();
   {
@@ -95,7 +98,7 @@ void display_GameStart() {
     double opacity = Animation::easeOut(t);
     if (state.gameState == GameStartPlayingTransition) opacity = 1 - (double) state.time / OpacityDuration;
     glColor4d(0, 0, 0, opacity);
-    drawString("Press Enter to Start", -size / 2, -20, 0, size, 1);
+    drawString("Press Enter to Start", -size / 2.0, -20, 0, size, 1);
   }
 
   // Information
@@ -108,7 +111,7 @@ void display_GameStart() {
     double opacity = Animation::linear(t);
     if (state.gameState == GameStartPlayingTransition) opacity = 1 - (double) state.time / OpacityDuration;
     glColor4d(0, 0, 1, opacity);
-    drawString("(c) 2023 Asa", -size / 2, -30, 0, size, 1);
+    drawString("(c) 2023 Asa", -size / 2.0, -30, 0, size, 1);
   }
   glPopMatrix();
 
@@ -120,11 +123,6 @@ void display_GameStart() {
 }
 
 void display_Playing() {
-  // Model view
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
-  gluLookAt(0, 0, 100, 0, 0, 0, 0, 1, 0);
-
   if (state.gameState == GameStartPlayingTransition && state.time < 750) return;
   if (state.gameState == GameStartPlayingTransition) {
     state.gameState = GamePlaying;
@@ -188,6 +186,13 @@ void display_Playing() {
     glEnd();
   }
   glPopMatrix();
+
+  // (test) Camera
+  if (state.key == Key_Space) {
+    double x = StartX + SquareWidth * state.cursor.second + SquareWidth / 2;
+    double y = StartY + SquareHeight * state.cursor.first + SquareHeight / 2;
+    state.cameraTo = make_tuple(x, y, 30);
+  }
 }
 
 void display() {
@@ -199,6 +204,24 @@ void display() {
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
   gluPerspective(50, (double) Width / Height, 1, 1000);
+
+  // Model view
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  {
+    auto&& [tox, toy, toz] = state.cameraTo;
+    auto&& [nowx, nowy, nowz] = state.cameraNow;
+    auto [diffx, diffy, diffz] = make_tuple(tox - nowx, toy - nowy, toz - nowz);
+    double norm = sqrt(diffx * diffx + diffy * diffy + diffz * diffz);
+    constexpr int Speed = 7;
+    constexpr double Eps = 1e-9;
+    if (abs(norm) < Eps) norm = Speed;
+    auto [dx, dy, dz] = make_tuple(diffx / norm * Speed, diffy / norm * Speed, diffz / norm * Speed);
+    nowx += sign(dx) * min(abs(diffx), abs(dx));
+    nowy += sign(dy) * min(abs(diffy), abs(dy));
+    nowz += sign(dz) * min(abs(diffz), abs(dz));
+    gluLookAt(nowx, nowy, nowz, nowx, nowy, 0, 0, 1, 0);
+  }
 
   // Clear
   glClearColor(1, 1, 1, 1);
@@ -224,13 +247,17 @@ void display() {
     display_Playing();
   }
 
+  // Timer
   state.time += Interval;
   if (state.time > 3000) {
     state.time %= 1'000'000'000'000'000'000LL;  // 1e18
     state.time += 3000;
   }
 
-  printf("\r%lld", state.time);
+  // Scaling
+  if (state.key == Key_Nothing) {
+    state.cameraTo = { 0, 0, 100 };
+  }
 
   glutSwapBuffers();
 }
