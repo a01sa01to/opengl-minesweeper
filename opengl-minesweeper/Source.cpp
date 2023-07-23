@@ -119,6 +119,7 @@ void display_GameStart() {
     glColor4d(0, 0, 0, opacity);
     drawString("Press Enter to Start", -size / 2.0, -20, 0, size, 1);
   }
+  glPopMatrix();
 
   // Information
   glPushMatrix();
@@ -142,17 +143,6 @@ void display_GameStart() {
 }
 
 void display_Playing() {
-  if (state.gameState == GameEndClearTransition && state.time > 2000) {
-    state.gameState = GameClear;
-    state.time = 0;
-    return;
-  }
-  if (state.gameState == GameEndOverTransition && state.time > 2000) {
-    state.gameState = GameOver;
-    state.time = 0;
-    return;
-  }
-
   if (state.gameState == GameStartPlayingTransition && state.time < 750) return;
   if (state.gameState == GameStartPlayingTransition) {
     state.gameState = GamePlaying;
@@ -236,13 +226,14 @@ void display_Playing() {
       }
     }
 
-    if ((state.gameState == GameEndOverTransition || state.gameState == GameEndClearTransition) && state.grid[i][j].test(Grid_Bomb)) {
+    if ((state.gameState == GameEndOverTransition || state.gameState == GameEndClearTransition || state.gameState == GameClear || state.gameState == GameOver) && state.grid[i][j].test(Grid_Bomb)) {
       glPushMatrix();
       constexpr int transitionDuration = 500;
       double t = (double) state.time / transitionDuration;
       double a = Animation::easeOut(t);
+      if (state.gameState == GameClear || state.gameState == GameOver) a = 1;
       double from = (state.grid[i][j].test(Grid_Open) ? 0.8 : 0.5);
-      if (state.gameState == GameEndOverTransition) {
+      if (state.gameState == GameEndOverTransition || state.gameState == GameOver) {
         double tor = 1, tog = 0, tob = 0;
         double diffr = tor - from, diffg = tog - from, diffb = tob - from;
         glColor3d(from + diffr * a, from + diffg * a, from + diffb * a);
@@ -362,11 +353,75 @@ void display_Playing() {
     }
   }
 
+  if (state.gameState == GameEndClearTransition && state.time > 2000) {
+    state.gameState = GameClear;
+    state.time = 0;
+    return;
+  }
+  if (state.gameState == GameEndOverTransition && state.time > 2000) {
+    state.gameState = GameOver;
+    state.time = 0;
+    return;
+  }
+
   // Camera
   if (state.key.test(Key_Space)) {
     double x = StartX + SquareWidth * state.cursor.second + SquareWidth / 2;
     double y = StartY + SquareHeight * state.cursor.first + SquareHeight / 2;
     state.cameraTo = make_tuple(x, y, 30);
+  }
+}
+
+void display_GameEnd() {
+  // Modal
+  glPushMatrix();
+  {
+    glColor4d(1, 1, 1, 0.7);
+    glRecti(-100, -100, 100, 100);
+  }
+  glPopMatrix();
+
+  // Title
+  glPushMatrix();
+  {
+    constexpr int size = 50;
+    glColor3d(0, 0, 0);
+    string str = "Game ";
+    str += (state.gameState == GameClear ? "Clear" : "Over");
+    drawString(str, -size / 2, 10, 0, size, 2);
+  }
+  glPopMatrix();
+
+  // Time
+  glPushMatrix();
+  {
+    constexpr int size = 20;
+    string str = "Time: ";
+    if (state.gameState == GameOver)
+      str += "-";
+    else
+      str += to_string(state.endTime / 1000);
+    drawString(str, -size / 2.0, -5, 0, size, 2);
+  }
+  glPopMatrix();
+
+  // Time
+  glPushMatrix();
+  {
+    constexpr int size = 36;
+    string str = "Press Enter to Restart ";
+    drawString(str, -size / 2.0, -20, 0, size, 1);
+  }
+  glPopMatrix();
+
+  if (state.key.test(Key_Enter)) {
+    // Initialize
+    state.gameState = GamePlaying;
+    state.cursor = { 0, 0 };
+    state.endTime = 0;
+    state.grid = array<array<bitset<GridBit>, GridWidth>, GridHeight>();
+    state.isGridInitialized = false;
+    state.time = 0;
   }
 }
 
@@ -421,6 +476,10 @@ void display() {
   else if (state.gameState == GamePlaying || state.gameState == GameEndOverTransition || state.gameState == GameEndClearTransition) {
     display_Playing();
   }
+  else if (state.gameState == GameOver || state.gameState == GameClear) {
+    display_Playing();
+    display_GameEnd();
+  }
 
   // Timer
   state.time += Interval;
@@ -472,7 +531,7 @@ void handleKeyboard(unsigned char key, int _x, int _y) {
       state.grid[i][j].reset(Grid_Flag);
       state.grid[i][j].set(Grid_Open);
       state.key.set(Key_Enter);
-      if (state.grid[i][j].test(Grid_Bomb)) {
+      if (state.gameState == GamePlaying && state.grid[i][j].test(Grid_Bomb)) {
         state.gameState = GameEndOverTransition;
         state.endTime = state.time;
         state.time = 0;
