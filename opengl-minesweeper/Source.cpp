@@ -2,8 +2,10 @@
 #include <array>
 #include <bitset>
 #include <numeric>
+#include <random>
 #include <string>
 #include <tuple>
+#include <vector>
 
 #include "animation.h"
 #include "glut.h"
@@ -33,7 +35,7 @@ constexpr uint Key_Down = 5;
 constexpr uint GridWidth = 15;
 constexpr uint GridHeight = 10;
 constexpr uint GridBit = 4;
-constexpr uint BombCount = (GridWidth * GridHeight) * 15 / 100;  // 15%
+constexpr uint BombCount = (GridWidth * GridHeight) * 20 / 100;  // 20%
 constexpr uint Grid_Open = 0;
 constexpr uint Grid_Question = 1;
 constexpr uint Grid_Flag = 2;
@@ -56,6 +58,7 @@ struct State {
   pair<int, int> cursor = { 0, 0 };
   tuple<double, double, double> cameraTo = { 0, 0, 100 };
   tuple<double, double, double> cameraNow = { 0, 0, 100 };
+  bool isGridInitialized = false;
 };
 State state = State();
 
@@ -128,6 +131,24 @@ void display_Playing() {
     state.gameState = GamePlaying;
     rep(i, GridHeight) rep(j, GridWidth) state.grid[i][j] = bitset<GridBit>(0);
   }
+  if (state.key.test(Key_Enter) && !state.isGridInitialized) {
+    state.isGridInitialized = true;
+    rep(i, GridHeight) rep(j, GridWidth) {
+      state.grid[i][j].reset(Grid_Flag);
+      state.grid[i][j].reset(Grid_Question);
+    }
+    pair<int, int> opened = state.cursor;
+    vector<pair<int, int>> bombs;
+    rep(i, GridHeight) rep(j, GridWidth) {
+      int diff = abs(i - opened.first) + abs(j - opened.second);
+      if (diff >= 3) bombs.emplace_back(i, j);
+    }
+    random_device seed_gen;
+    mt19937 engine(seed_gen());
+    shuffle(bombs.begin(), bombs.end(), engine);
+    while (bombs.size() > BombCount) bombs.pop_back();
+    for (auto&& [i, j] : bombs) state.grid[i][j].set(Grid_Bomb);
+  }
 
   constexpr int StartX = -50;
   constexpr int StartY = 40;
@@ -150,6 +171,7 @@ void display_Playing() {
         glutSolidCube(SquareWidth);
       }
       glPopMatrix();
+      if (!state.isGridInitialized) continue;
       if (state.grid[i][j].test(Grid_Question)) {
         glPushMatrix();
         glColor3d(0, 0, 1);
@@ -162,6 +184,15 @@ void display_Playing() {
         glColor3d(1, 0, 0);
         glTranslated(SquareWidth / 2.5, -SquareHeight / 5, 0);
         drawString("!", x, y + SquareHeight, 0, SquareWidth / 6, 2);
+        glPopMatrix();
+      }
+
+      // Debug
+      if (state.grid[i][j].test(Grid_Bomb)) {
+        glPushMatrix();
+        glColor3d(0, 0, 1);
+        glTranslated(SquareWidth / 4, -SquareHeight / 5, 0);
+        drawString("B", x, y + SquareHeight, 0, SquareWidth / 2, 2);
         glPopMatrix();
       }
     }
@@ -312,7 +343,12 @@ void handleKeyboard(unsigned char key, int _x, int _y) {
   auto&& [i, j] = state.cursor;
   switch (key) {
     case 32: state.key.set(Key_Space); break;
-    case 13: state.key.set(Key_Enter); break;
+    case 13:
+      state.grid[i][j].reset(Grid_Question);
+      state.grid[i][j].reset(Grid_Flag);
+      state.grid[i][j].set(Grid_Open);
+      state.key.set(Key_Enter);
+      break;
     case 'F':
     case 'f':
       state.grid[i][j].reset(Grid_Question);
