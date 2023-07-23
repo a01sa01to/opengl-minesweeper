@@ -13,6 +13,8 @@ using namespace std;
 using uint = unsigned int;
 using ll = long long;
 
+#define rep(i, n) for (int i = 0; i < (n); ++i)
+
 // Settings
 constexpr uint Width = 640;
 constexpr uint Height = 480;
@@ -124,25 +126,46 @@ void display_Playing() {
   gluLookAt(0, 0, 100, 0, 0, 0, 0, 1, 0);
 
   if (state.gameState == GameStartPlayingTransition && state.time < 750) return;
-  if (state.gameState == GameStartPlayingTransition) state.gameState = GamePlaying;
+  if (state.gameState == GameStartPlayingTransition) {
+    state.gameState = GamePlaying;
+    rep(i, GridHeight) rep(j, GridWidth) state.grid[i][j] = bitset<GridBit>(0);
+  }
 
-  // Draw Grid
   constexpr int StartX = -50;
   constexpr int StartY = 40;
   constexpr int EndX = 50;
   constexpr int EndY = -30;
   constexpr double SquareWidth = (double) (EndX - StartX) / GridWidth;
   constexpr double SquareHeight = (double) (EndY - StartY) / GridHeight;
+
+  // Draw Grid
+  rep(i, GridHeight) rep(j, GridWidth) {
+    double x = StartX + SquareWidth * j;
+    double y = StartY + SquareHeight * i;
+    if ((state.grid[i][j] & Grid_Open).none()) {
+      glPushMatrix();
+      {
+        glColor3d(0.5, 0.5, 0.5);
+        glTranslated(x, y, 0);
+        glTranslated(SquareWidth / 2, SquareHeight / 2, 0);
+        glScaled(1, (double) SquareHeight / SquareWidth, 1.0 / SquareWidth);
+        glutSolidCube(SquareWidth);
+      }
+      glPopMatrix();
+    }
+  }
+
+  // Draw Grid Lines
   glPushMatrix();
   {
     glLineWidth(1);
     glColor3d(0.3, 0.3, 0.3);
-    for (int i = 0; i <= GridWidth; i++) {
+    rep(i, GridWidth + 1) {
       double x = StartX + SquareWidth * i;
       glBegin(GL_LINES), glVertex3d(x, StartY, 0), glVertex3d(x, EndY, 0), glEnd();
     }
-    for (int j = 0; j <= GridHeight; j++) {
-      double y = StartY + SquareHeight * j;
+    rep(i, GridHeight + 1) {
+      double y = StartY + SquareHeight * i;
       glBegin(GL_LINES), glVertex3d(StartX, y, 0), glVertex3d(EndX, y, 0), glEnd();
     }
   }
