@@ -566,10 +566,11 @@ void handleKeyboard(unsigned char key, int _x, int _y) {
   switch (key) {
     case 32: state.key.set(Key_Space); break;  // Space
     case 13:                                   // Enter
+      state.key.set(Key_Enter);
+      if (state.grid[i][j].test(Grid_Flag) || state.grid[i][j].test(Grid_Open)) break;
       state.grid[i][j].reset(Grid_Question);
       state.grid[i][j].reset(Grid_Flag);
       state.grid[i][j].set(Grid_Open);
-      state.key.set(Key_Enter);
       if (state.gameState == GamePlaying && state.grid[i][j].test(Grid_Bomb)) {
         state.gameState = GameEndOverTransition;
         state.endTime = state.time;
@@ -578,11 +579,13 @@ void handleKeyboard(unsigned char key, int _x, int _y) {
       break;
     case 'F':
     case 'f':
+      if (!state.isGridInitialized) break;
       state.grid[i][j].reset(Grid_Question);
       state.grid[i][j].flip(Grid_Flag);
       break;
     case 'Q':
     case 'q':
+      if (!state.isGridInitialized) break;
       state.grid[i][j].reset(Grid_Flag);
       state.grid[i][j].flip(Grid_Question);
       break;
