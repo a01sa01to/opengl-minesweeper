@@ -152,24 +152,16 @@ void display_Playing() {
       glPopMatrix();
       if (state.grid[i][j].test(Grid_Question)) {
         glPushMatrix();
-        {
-          glColor3d(0, 0, 0);
-          glTranslated(x, y, 0);
-          glTranslated(SquareWidth / 2, SquareHeight / 2, 0);
-          glScaled(1, (double) SquareHeight / SquareWidth, 1.0 / SquareWidth);
-          glutSolidCube(SquareWidth * 0.8);
-        }
+        glColor3d(0, 0, 1);
+        glTranslated(SquareWidth / 4, -SquareHeight / 5, 0);
+        drawString("?", x, y + SquareHeight, 0, SquareWidth / 2, 2);
         glPopMatrix();
       }
       else if (state.grid[i][j].test(Grid_Flag)) {
         glPushMatrix();
-        {
-          glColor3d(1, 0, 0);
-          glTranslated(x, y, 0);
-          glTranslated(SquareWidth / 2, SquareHeight / 2, 0);
-          glScaled(1, (double) SquareHeight / SquareWidth, 2.0 / SquareWidth);
-          glutSolidCube(SquareWidth * 0.8);
-        }
+        glColor3d(1, 0, 0);
+        glTranslated(SquareWidth / 2.5, -SquareHeight / 5, 0);
+        drawString("!", x, y + SquareHeight, 0, SquareWidth / 6, 2);
         glPopMatrix();
       }
     }
