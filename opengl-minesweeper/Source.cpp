@@ -2,6 +2,7 @@
 #include <array>
 #include <bitset>
 #include <numeric>
+#include <queue>
 #include <random>
 #include <string>
 #include <tuple>
@@ -20,7 +21,7 @@ using ll = long long;
 // Settings
 constexpr uint Width = 640;
 constexpr uint Height = 480;
-constexpr uint Interval = 10;
+constexpr uint Interval = 50;
 
 // Keyboard
 constexpr uint KeyBit = 6;
@@ -35,7 +36,7 @@ constexpr uint Key_Down = 5;
 constexpr uint GridWidth = 15;
 constexpr uint GridHeight = 10;
 constexpr uint GridBit = 4;
-constexpr uint BombCount = (GridWidth * GridHeight) * 20 / 100;  // 20%
+constexpr uint BombCount = (GridWidth * GridHeight) * 25 / 100;  // 25%
 constexpr uint Grid_Open = 0;
 constexpr uint Grid_Question = 1;
 constexpr uint Grid_Flag = 2;
@@ -158,10 +159,54 @@ void display_Playing() {
   constexpr double SquareHeight = (double) (EndY - StartY) / GridHeight;
   constexpr double CharWidth = SquareWidth / 1.5;
 
+  // Open if no bomb
+  if (state.isGridInitialized) {
+    queue<pair<int, int>> que;
+    rep(i, GridHeight) rep(j, GridWidth) {
+      if (state.grid[i][j].test(Grid_Open)) que.emplace(i, j);
+    }
+    while (!que.empty()) {
+      auto&& [i, j] = que.front();
+      que.pop();
+      state.grid[i][j].set(Grid_Open);
+      int cnt = 0;
+      for (int di = -1; di <= 1; di++) {
+        for (int dj = -1; dj <= 1; dj++) {
+          int ni = i + di;
+          int nj = j + dj;
+          if (ni < 0 || ni >= GridHeight || nj < 0 || nj >= GridWidth) continue;
+          if (state.grid[ni][nj].test(Grid_Bomb)) cnt++;
+        }
+      }
+      if (cnt == 0) {
+        for (int di = -1; di <= 1; di++) {
+          for (int dj = -1; dj <= 1; dj++) {
+            int ni = i + di;
+            int nj = j + dj;
+            if (ni < 0 || ni >= GridHeight || nj < 0 || nj >= GridWidth) continue;
+            if (state.grid[ni][nj].test(Grid_Open)) continue;
+            que.emplace(ni, nj);
+          }
+        }
+      }
+    }
+  }
+
   // Draw Grid
   rep(i, GridHeight) rep(j, GridWidth) {
     double x = StartX + SquareWidth * j;
     double y = StartY + SquareHeight * i;
+
+    int cnt = 0;
+    for (int di = -1; di <= 1; di++) {
+      for (int dj = -1; dj <= 1; dj++) {
+        int ni = i + di;
+        int nj = j + dj;
+        if (ni < 0 || ni >= GridHeight || nj < 0 || nj >= GridWidth) continue;
+        if (state.grid[ni][nj].test(Grid_Bomb)) cnt++;
+      }
+    }
+
     if (!state.grid[i][j].test(Grid_Open)) {
       glPushMatrix();
       {
@@ -198,6 +243,11 @@ void display_Playing() {
       }
     }
     else {
+      glPushMatrix();
+      glColor3d(0, 0, 1);
+      glTranslated(SquareWidth / 4, -SquareHeight / 5, 0);
+      drawMonoString(to_string(cnt), x, y + SquareHeight, 0, CharWidth, 2);
+      glPopMatrix();
     }
   }
 
