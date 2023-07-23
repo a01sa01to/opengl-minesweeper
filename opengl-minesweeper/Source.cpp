@@ -156,6 +156,7 @@ void display_Playing() {
   constexpr int EndY = -30;
   constexpr double SquareWidth = (double) (EndX - StartX) / GridWidth;
   constexpr double SquareHeight = (double) (EndY - StartY) / GridHeight;
+  constexpr double CharWidth = SquareWidth / 1.5;
 
   // Draw Grid
   rep(i, GridHeight) rep(j, GridWidth) {
@@ -176,14 +177,14 @@ void display_Playing() {
         glPushMatrix();
         glColor3d(0, 0, 1);
         glTranslated(SquareWidth / 4, -SquareHeight / 5, 0);
-        drawString("?", x, y + SquareHeight, 0, SquareWidth / 2, 2);
+        drawMonoString("?", x, y + SquareHeight, 0, CharWidth, 2);
         glPopMatrix();
       }
       else if (state.grid[i][j].test(Grid_Flag)) {
         glPushMatrix();
         glColor3d(1, 0, 0);
         glTranslated(SquareWidth / 2.5, -SquareHeight / 5, 0);
-        drawString("!", x, y + SquareHeight, 0, SquareWidth / 6, 2);
+        drawMonoString("!", x, y + SquareHeight, 0, CharWidth, 2);
         glPopMatrix();
       }
 
@@ -192,7 +193,7 @@ void display_Playing() {
         glPushMatrix();
         glColor3d(0, 0, 1);
         glTranslated(SquareWidth / 4, -SquareHeight / 5, 0);
-        drawString("B", x, y + SquareHeight, 0, SquareWidth / 2, 2);
+        drawMonoString("B", x, y + SquareHeight, 0, CharWidth, 2);
         glPopMatrix();
       }
     }
