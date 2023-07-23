@@ -21,7 +21,7 @@ using ll = long long;
 // Settings
 constexpr uint Width = 640;
 constexpr uint Height = 480;
-constexpr uint Interval = 10;
+constexpr uint Interval = 100;
 
 // Keyboard
 constexpr uint KeyBit = 6;
@@ -36,7 +36,7 @@ constexpr uint Key_Down = 5;
 constexpr uint GridWidth = 15;
 constexpr uint GridHeight = 10;
 constexpr uint GridBit = 4;
-constexpr uint BombCount = (GridWidth * GridHeight) * 25 / 100;  // 25%
+constexpr uint BombCount = (GridWidth * GridHeight) * 3 / 100;  // 25%
 constexpr uint Grid_Open = 0;
 constexpr uint Grid_Question = 1;
 constexpr uint Grid_Flag = 2;
@@ -74,6 +74,7 @@ struct State {
   tuple<double, double, double> cameraTo = { 0, 0, 100 };
   tuple<double, double, double> cameraNow = { 0, 0, 100 };
   bool isGridInitialized = false;
+  ll endTime = 0;
 };
 State state = State();
 
@@ -237,7 +238,20 @@ void display_Playing() {
 
     if ((state.gameState == GameEndOverTransition || state.gameState == GameEndClearTransition) && state.grid[i][j].test(Grid_Bomb)) {
       glPushMatrix();
-      glColor4d(1, 0, 0, Animation::easeOut(state.time / 500.0));
+      constexpr int transitionDuration = 500;
+      double t = (double) state.time / transitionDuration;
+      double a = Animation::easeOut(t);
+      double from = (state.grid[i][j].test(Grid_Open) ? 0.8 : 0.5);
+      if (state.gameState == GameEndOverTransition) {
+        double tor = 1, tog = 0, tob = 0;
+        double diffr = tor - from, diffg = tog - from, diffb = tob - from;
+        glColor3d(from + diffr * a, from + diffg * a, from + diffb * a);
+      }
+      else {
+        double tor = 0.6, tog = 0.8, tob = 0.9;
+        double diffr = tor - from, diffg = tog - from, diffb = tob - from;
+        glColor3d(from + diffr * a, from + diffg * a, from + diffb * a);
+      }
       glTranslated(x, y, 0);
       glTranslated(SquareWidth / 2, SquareHeight / 2, 0);
       glScaled(1, (double) SquareHeight / SquareWidth, 1.0 / SquareWidth);
@@ -319,6 +333,35 @@ void display_Playing() {
   }
   glPopMatrix();
 
+  // Information
+  glPushMatrix();
+  {
+    glColor3d(0.3, 0.3, 0.3);
+    glRecti(-100, -40, 100, -60);
+    glPushMatrix();
+    {
+      glColor3d(1, 1, 1);
+      string str = "Time: ";
+      str += to_string((state.gameState == GamePlaying ? state.time : state.endTime) / 1000) + ", Bombs: " + to_string(BombCount);
+      drawMonoString(str, -60, -45, 0, 3 * str.size(), 1);
+    }
+    glPopMatrix();
+  }
+  glPopMatrix();
+
+  // Exit Check
+  if (state.gameState == GamePlaying) {
+    int cnt = 0;
+    rep(i, GridHeight) rep(j, GridWidth) {
+      if (!state.grid[i][j].test(Grid_Open)) cnt++;
+    }
+    if (cnt == BombCount) {
+      state.gameState = GameEndClearTransition;
+      state.endTime = state.time;
+      state.time = 0;
+    }
+  }
+
   // Camera
   if (state.key.test(Key_Space)) {
     double x = StartX + SquareWidth * state.cursor.second + SquareWidth / 2;
@@ -381,10 +424,6 @@ void display() {
 
   // Timer
   state.time += Interval;
-  if (state.time > 3000) {
-    state.time %= 1'000'000'000'000'000'000LL;  // 1e18
-    state.time += 3000;
-  }
 
   // Scaling
   if (state.key.none()) {
@@ -435,6 +474,7 @@ void handleKeyboard(unsigned char key, int _x, int _y) {
       state.key.set(Key_Enter);
       if (state.grid[i][j].test(Grid_Bomb)) {
         state.gameState = GameEndOverTransition;
+        state.endTime = state.time;
         state.time = 0;
       }
       break;
