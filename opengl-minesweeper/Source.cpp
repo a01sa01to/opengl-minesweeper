@@ -36,7 +36,7 @@ constexpr uint Key_Down = 5;
 constexpr uint GridWidth = 15;
 constexpr uint GridHeight = 10;
 constexpr uint GridBit = 4;
-constexpr uint BombCount = (GridWidth * GridHeight) * 3 / 100;  // 25%
+uint BombCount = (GridWidth * GridHeight) * 20 / 100;
 constexpr uint Grid_Open = 0;
 constexpr uint Grid_Question = 1;
 constexpr uint Grid_Flag = 2;
@@ -75,6 +75,7 @@ struct State {
   tuple<double, double, double> cameraNow = { 0, 0, 100 };
   bool isGridInitialized = false;
   ll endTime = 0;
+  uint remBomb = BombCount;
 };
 State state = State();
 
@@ -333,7 +334,10 @@ void display_Playing() {
     {
       glColor3d(1, 1, 1);
       string str = "Time: ";
-      str += to_string((state.gameState == GamePlaying ? state.time : state.endTime) / 1000) + ", Bombs: " + to_string(BombCount);
+      str += to_string((state.gameState == GamePlaying ? state.time : state.endTime) / 1000) + ", Bombs Remaining: " + to_string(state.remBomb);
+      if (!state.isGridInitialized) {
+        str += ", F1:Easy, F2:Normal, F3:Hard";
+      }
       drawMonoString(str, -60, -45, 0, 3 * str.size(), 1);
     }
     glPopMatrix();
@@ -343,14 +347,17 @@ void display_Playing() {
   // Exit Check
   if (state.gameState == GamePlaying) {
     int cnt = 0;
+    int flagcnt = 0;
     rep(i, GridHeight) rep(j, GridWidth) {
       if (!state.grid[i][j].test(Grid_Open)) cnt++;
+      if (state.grid[i][j].test(Grid_Flag)) flagcnt++;
     }
     if (cnt == BombCount) {
       state.gameState = GameEndClearTransition;
       state.endTime = state.time;
       state.time = 0;
     }
+    state.remBomb = BombCount - flagcnt;
   }
 
   if (state.gameState == GameEndClearTransition && state.time > 2000) {
@@ -509,6 +516,15 @@ void handleKeyboardSp(int key, int _x, int _y) {
     case GLUT_KEY_RIGHT:
       state.key.set(Key_Right);
       state.cursor.second++;
+      break;
+    case GLUT_KEY_F1:
+      if (!state.isGridInitialized) BombCount = (GridWidth * GridHeight) * 1 / 10;
+      break;
+    case GLUT_KEY_F2:
+      if (!state.isGridInitialized) BombCount = (GridWidth * GridHeight) * 2 / 10;
+      break;
+    case GLUT_KEY_F3:
+      if (!state.isGridInitialized) BombCount = (GridWidth * GridHeight) * 3 / 10;
       break;
   }
   state.cursor.first = max(0, min(state.cursor.first, (int) GridHeight - 1));
