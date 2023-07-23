@@ -329,16 +329,26 @@ void display_Playing() {
   glPushMatrix();
   {
     glColor3d(0.3, 0.3, 0.3);
-    glRecti(-100, -40, 100, -60);
+    glRecti(-100, -35, 100, -60);
     glPushMatrix();
     {
       glColor3d(1, 1, 1);
       string str = "Time: ";
       str += to_string((state.gameState == GamePlaying ? state.time : state.endTime) / 1000) + ", Bombs Remaining: " + to_string(state.remBomb);
+      drawMonoString(str, -60, -40, 0, 3 * str.size(), 1);
+    }
+    glPopMatrix();
+    glPushMatrix();
+    {
+      glColor3d(1, 1, 1);
+      string str = "";
       if (!state.isGridInitialized) {
-        str += ", F1:Easy, F2:Normal, F3:Hard";
+        str += "[Mode] F1: Easy, F2: Normal, F3: Hard";
       }
-      drawMonoString(str, -60, -45, 0, 3 * str.size(), 1);
+      else {
+        str += "[How to Play] Enter: Dig, F: Toggle Flag, Q: Toggle Question, Space: Magnify";
+      }
+      drawString(str, -60, -44, 0, 1.3 * str.size(), 1);
     }
     glPopMatrix();
   }
@@ -363,12 +373,10 @@ void display_Playing() {
   if (state.gameState == GameEndClearTransition && state.time > 2000) {
     state.gameState = GameClear;
     state.time = 0;
-    return;
   }
   if (state.gameState == GameEndOverTransition && state.time > 2000) {
     state.gameState = GameOver;
     state.time = 0;
-    return;
   }
 
   // Camera
