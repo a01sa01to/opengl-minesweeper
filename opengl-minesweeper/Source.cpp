@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <bitset>
 #include <numeric>
@@ -30,6 +31,7 @@ constexpr uint Key_Down = 103;
 constexpr uint GridWidth = 15;
 constexpr uint GridHeight = 10;
 constexpr uint GridBit = 4;
+constexpr uint BombCount = (GridWidth * GridHeight) * 15 / 100;  // 15%
 constexpr bitset<GridBit> Grid_Open(0b0001);
 constexpr bitset<GridBit> Grid_Question(0b0010);
 constexpr bitset<GridBit> Grid_Flag(0b0100);
@@ -49,6 +51,7 @@ struct State {
   ll time = 0;
   int key = Key_Nothing;
   array<array<bitset<GridBit>, GridWidth>, GridHeight> grid;
+  pair<int, int> cursor = { 0, 0 };
 };
 State state = State();
 
@@ -132,6 +135,7 @@ void display_Playing() {
   constexpr double SquareHeight = (double) (EndY - StartY) / GridHeight;
   glPushMatrix();
   {
+    glLineWidth(1);
     glColor3d(0.3, 0.3, 0.3);
     for (int i = 0; i <= GridWidth; i++) {
       double x = StartX + SquareWidth * i;
@@ -141,6 +145,24 @@ void display_Playing() {
       double y = StartY + SquareHeight * j;
       glBegin(GL_LINES), glVertex3d(StartX, y, 0), glVertex3d(EndX, y, 0), glEnd();
     }
+  }
+  glPopMatrix();
+
+  // Draw Cursor
+  glPushMatrix();
+  {
+    glLineWidth(3);
+    glColor3d(1, 0, 0);
+    double x = StartX + SquareWidth * state.cursor.second;
+    double y = StartY + SquareHeight * state.cursor.first;
+    double px = x + SquareWidth;
+    double py = y + SquareHeight;
+    glBegin(GL_LINE_LOOP);
+    glVertex3d(x, y, 0);
+    glVertex3d(px, y, 0);
+    glVertex3d(px, py, 0);
+    glVertex3d(x, py, 0);
+    glEnd();
   }
   glPopMatrix();
 }
@@ -192,13 +214,27 @@ void display() {
 
 void handleKeyboard(int key, int x, int y) {
   switch (key) {
-    case GLUT_KEY_UP: state.key = Key_Up; break;
-    case GLUT_KEY_DOWN: state.key = Key_Down; break;
-    case GLUT_KEY_LEFT: state.key = Key_Left; break;
-    case GLUT_KEY_RIGHT: state.key = Key_Right; break;
+    case GLUT_KEY_UP:
+      state.key = Key_Up;
+      state.cursor.first--;
+      break;
+    case GLUT_KEY_DOWN:
+      state.key = Key_Down;
+      state.cursor.first++;
+      break;
+    case GLUT_KEY_LEFT:
+      state.key = Key_Left;
+      state.cursor.second--;
+      break;
+    case GLUT_KEY_RIGHT:
+      state.key = Key_Right;
+      state.cursor.second++;
+      break;
     case 32: state.key = Key_Space; break;
     case 13: state.key = Key_Enter; break;
   }
+  state.cursor.first = max(0, min(state.cursor.first, (int) GridHeight - 1));
+  state.cursor.second = max(0, min(state.cursor.second, (int) GridWidth - 1));
 }
 void handleKeyboardUp(int key, int x, int y) { state.key = Key_Nothing; }
 void handleKeyboard(unsigned char key, int x, int y) { handleKeyboard((int) key, x, y); }
