@@ -21,14 +21,13 @@ constexpr uint Height = 480;
 constexpr uint Interval = 10;
 
 // Keyboard
-constexpr uint KeyBit = 7;
+constexpr uint KeyBit = 6;
 constexpr uint Key_Enter = 0;
 constexpr uint Key_Space = 1;
-constexpr uint Key_Question = 2;
-constexpr uint Key_Left = 3;
-constexpr uint Key_Up = 4;
-constexpr uint Key_Right = 5;
-constexpr uint Key_Down = 6;
+constexpr uint Key_Left = 2;
+constexpr uint Key_Up = 3;
+constexpr uint Key_Right = 4;
+constexpr uint Key_Down = 5;
 
 // Grid
 constexpr uint GridWidth = 15;
@@ -39,20 +38,6 @@ constexpr uint Grid_Open = 0;
 constexpr uint Grid_Question = 1;
 constexpr uint Grid_Flag = 2;
 constexpr uint Grid_Bomb = 3;
-
-// Test
-static_assert(Key_Enter < KeyBit);
-static_assert(Key_Space < KeyBit);
-static_assert(Key_Question < KeyBit);
-static_assert(Key_Left < KeyBit);
-static_assert(Key_Up < KeyBit);
-static_assert(Key_Right < KeyBit);
-static_assert(Key_Down < KeyBit);
-static_assert(BombCount < GridWidth * GridHeight);
-static_assert(Grid_Open < GridBit);
-static_assert(Grid_Question < GridBit);
-static_assert(Grid_Flag < GridBit);
-static_assert(Grid_Bomb < GridBit);
 
 // State
 enum GameState
@@ -165,6 +150,30 @@ void display_Playing() {
         glutSolidCube(SquareWidth);
       }
       glPopMatrix();
+      if (state.grid[i][j].test(Grid_Question)) {
+        glPushMatrix();
+        {
+          glColor3d(0, 0, 0);
+          glTranslated(x, y, 0);
+          glTranslated(SquareWidth / 2, SquareHeight / 2, 0);
+          glScaled(1, (double) SquareHeight / SquareWidth, 1.0 / SquareWidth);
+          glutSolidCube(SquareWidth * 0.8);
+        }
+        glPopMatrix();
+      }
+      else if (state.grid[i][j].test(Grid_Flag)) {
+        glPushMatrix();
+        {
+          glColor3d(1, 0, 0);
+          glTranslated(x, y, 0);
+          glTranslated(SquareWidth / 2, SquareHeight / 2, 0);
+          glScaled(1, (double) SquareHeight / SquareWidth, 2.0 / SquareWidth);
+          glutSolidCube(SquareWidth * 0.8);
+        }
+        glPopMatrix();
+      }
+    }
+    else {
     }
   }
 
@@ -202,7 +211,7 @@ void display_Playing() {
   }
   glPopMatrix();
 
-  // (test) Camera
+  // Camera
   if (state.key.test(Key_Space)) {
     double x = StartX + SquareWidth * state.cursor.second + SquareWidth / 2;
     double y = StartY + SquareHeight * state.cursor.first + SquareHeight / 2;
@@ -277,7 +286,7 @@ void display() {
   glutSwapBuffers();
 }
 
-void handleKeyboard(int key, int x, int y) {
+void handleKeyboardSp(int key, int _x, int _y) {
   switch (key) {
     case GLUT_KEY_UP:
       state.key.set(Key_Up);
@@ -295,28 +304,41 @@ void handleKeyboard(int key, int x, int y) {
       state.key.set(Key_Right);
       state.cursor.second++;
       break;
-    case 32: state.key.set(Key_Space); break;
-    case 13: state.key.set(Key_Enter); break;
-    case 'Q':
-    case 'q': state.key.set(Key_Question); break;
   }
   state.cursor.first = max(0, min(state.cursor.first, (int) GridHeight - 1));
   state.cursor.second = max(0, min(state.cursor.second, (int) GridWidth - 1));
 }
-void handleKeyboardUp(int key, int x, int y) {
+void handleKeyboardSpUp(int key, int _x, int _y) {
   switch (key) {
     case GLUT_KEY_UP: state.key.reset(Key_Up); break;
     case GLUT_KEY_DOWN: state.key.reset(Key_Down); break;
     case GLUT_KEY_LEFT: state.key.reset(Key_Left); break;
     case GLUT_KEY_RIGHT: state.key.reset(Key_Right); break;
-    case 32: state.key.reset(Key_Space); break;
-    case 13: state.key.reset(Key_Enter); break;
-    case 'Q':
-    case 'q': state.key.reset(Key_Question); break;
   }
 }
-void handleKeyboard(unsigned char key, int x, int y) { handleKeyboard((int) key, x, y); }
-void handleKeyboardUp(unsigned char key, int x, int y) { handleKeyboardUp((int) key, x, y); }
+void handleKeyboard(unsigned char key, int _x, int _y) {
+  auto&& [i, j] = state.cursor;
+  switch (key) {
+    case 32: state.key.set(Key_Space); break;
+    case 13: state.key.set(Key_Enter); break;
+    case 'F':
+    case 'f':
+      state.grid[i][j].reset(Grid_Question);
+      state.grid[i][j].flip(Grid_Flag);
+      break;
+    case 'Q':
+    case 'q':
+      state.grid[i][j].reset(Grid_Flag);
+      state.grid[i][j].flip(Grid_Question);
+      break;
+  }
+}
+void handleKeyboardUp(unsigned char key, int _x, int _y) {
+  switch (key) {
+    case 32: state.key.reset(Key_Space); break;
+    case 13: state.key.reset(Key_Enter); break;
+  }
+}
 
 int main(int argc, char* argv[]) {
   glutInit(&argc, argv);
@@ -337,8 +359,8 @@ int main(int argc, char* argv[]) {
   glutDisplayFunc(display);
   glutKeyboardFunc(handleKeyboard);
   glutKeyboardUpFunc(handleKeyboardUp);
-  glutSpecialFunc(handleKeyboard);
-  glutSpecialUpFunc(handleKeyboardUp);
+  glutSpecialFunc(handleKeyboardSp);
+  glutSpecialUpFunc(handleKeyboardSpUp);
   glutTimerFunc(Interval, timer, 10);
   glutMainLoop();
   return 0;
