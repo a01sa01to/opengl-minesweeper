@@ -610,24 +610,39 @@ void handleKeyboardSp(int key, int _x, int _y) {
       state.key.set(Key_Right);
       state.cursor.second++;
       break;
+  }
+  if (!state.isGridInitialized) {
+    switch (key) {
+      case GLUT_KEY_F1:
+        state.isAssisted = false;
+        BombCount = GridSquares * ModeEasy / 100;
+        break;
 
-    case GLUT_KEY_F4:
-      if (!state.isGridInitialized) state.isAssisted = true;
-    case GLUT_KEY_F1:
-      if (!state.isGridInitialized) BombCount = GridSquares * ModeEasy / 100;
-      break;
+      case GLUT_KEY_F2:
+        state.isAssisted = false;
+        BombCount = GridSquares * ModeMedium / 100;
+        break;
 
-    case GLUT_KEY_F5:
-      if (!state.isGridInitialized) state.isAssisted = true;
-    case GLUT_KEY_F2:
-      if (!state.isGridInitialized) BombCount = GridSquares * ModeMedium / 100;
-      break;
+      case GLUT_KEY_F3:
+        state.isAssisted = false;
+        BombCount = GridSquares * ModeHard / 100;
+        break;
 
-    case GLUT_KEY_F6:
-      if (!state.isGridInitialized) state.isAssisted = true;
-    case GLUT_KEY_F3:
-      if (!state.isGridInitialized) BombCount = GridSquares * ModeHard / 100;
-      break;
+      case GLUT_KEY_F4:
+        state.isAssisted = true;
+        BombCount = GridSquares * ModeEasy / 100;
+        break;
+
+      case GLUT_KEY_F5:
+        state.isAssisted = true;
+        BombCount = GridSquares * ModeMedium / 100;
+        break;
+
+      case GLUT_KEY_F6:
+        state.isAssisted = true;
+        BombCount = GridSquares * ModeHard / 100;
+        break;
+    }
   }
   state.cursor.first = max(0, min(state.cursor.first, (int) GridHeight - 1));
   state.cursor.second = max(0, min(state.cursor.second, (int) GridWidth - 1));
