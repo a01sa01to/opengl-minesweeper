@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <array>
 #include <bitset>
+#include <chrono>
 #include <numeric>
 #include <queue>
 #include <random>
@@ -81,6 +82,7 @@ struct State {
   ll endTime = 0;
   int remBomb = BombCount;
   bool isAssisted = false;
+  chrono::system_clock::time_point startTime;
 };
 State state = State();
 
@@ -156,6 +158,7 @@ void display_Playing() {
   }
   if (state.key.test(Key_Enter) && !state.isGridInitialized) {
     state.isGridInitialized = true;
+    state.startTime = chrono::system_clock::now();
     rep(i, GridHeight) rep(j, GridWidth) {
       state.grid[i][j].reset(Grid_Flag);
       state.grid[i][j].reset(Grid_Question);
@@ -376,7 +379,17 @@ void display_Playing() {
     {
       glColor3d(1, 1, 1);
       string str = "Time: ";
-      str += to_string((state.gameState == GamePlaying ? state.time : state.endTime) / 1000) + ", Bombs Remaining: " + to_string(state.remBomb);
+      int time = state.endTime;
+      if (state.gameState == GamePlaying) {
+        if (state.isGridInitialized) {
+          auto now = chrono::system_clock::now();
+          time = chrono::duration_cast<chrono::milliseconds>(now - state.startTime).count();
+        }
+        else {
+          time = 0;
+        }
+      }
+      str += to_string(time / 1000) + ", Bombs Remaining: " + to_string(state.remBomb);
       switch (BombCount) {
         case GridSquares* ModeEasy / 100:
           str += " [Easy";
@@ -419,7 +432,8 @@ void display_Playing() {
     }
     if (cnt == BombCount) {
       state.gameState = GameEndClearTransition;
-      state.endTime = state.time;
+      auto now = chrono::system_clock::now();
+      state.endTime = chrono::duration_cast<chrono::milliseconds>(now - state.startTime).count();
       state.time = 0;
     }
     state.remBomb = BombCount - flagcnt;
