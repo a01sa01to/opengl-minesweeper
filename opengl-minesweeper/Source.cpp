@@ -22,7 +22,7 @@ using ll = long long;
 // Settings
 constexpr uint Width = 640;
 constexpr uint Height = 480;
-constexpr uint Interval = 100;
+constexpr uint Interval = 10;
 
 // Keyboard
 constexpr uint KeyBit = 6;
