@@ -17,3 +17,10 @@ Minesweeper Game with OpenGL and C++
 - Enter: Open cell
 - F: Flag cell					
 - Q: Question Mark
+- R: Restart
+- F1: Normal Easy
+- F2: Normal Medium
+- F3: Normal Hard
+- F4: Assisted Easy
+- F5: Assisted Medium
+- F6: Assisted Hard
