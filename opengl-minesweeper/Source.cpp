@@ -173,6 +173,43 @@ void display_Playing() {
     for (auto&& [i, j] : bombs) state.grid[i][j].set(Grid_Bomb);
   }
 
+  // Assist
+  if (state.isGridInitialized && state.isAssisted) {
+    array nextGrid = state.grid;
+    rep(i, GridHeight) rep(j, GridWidth) {
+      if (state.grid[i][j].test(Grid_Open)) {
+        int cntBomb = 0, cntFlag = 0;
+        for (int di = -1; di <= 1; di++) {
+          for (int dj = -1; dj <= 1; dj++) {
+            if (!di && !dj) continue;
+            int ni = i + di, nj = j + dj;
+            if (ni < 0 || ni >= GridHeight || nj < 0 || nj >= GridWidth) continue;
+            if (state.grid[ni][nj].test(Grid_Bomb)) cntBomb++;
+            if (state.grid[ni][nj].test(Grid_Flag)) cntFlag++;
+          }
+        }
+        if (cntBomb == cntFlag) {
+          for (int di = -1; di <= 1; di++) {
+            for (int dj = -1; dj <= 1; dj++) {
+              if (!di && !dj) continue;
+              int ni = i + di, nj = j + dj;
+              if (ni < 0 || ni >= GridHeight || nj < 0 || nj >= GridWidth) continue;
+              if (state.grid[ni][nj].test(Grid_Flag)) continue;
+              if (state.grid[ni][nj].test(Grid_Open)) continue;
+              nextGrid[ni][nj].set(Grid_Open);
+              if (state.grid[ni][nj].test(Grid_Bomb)) {
+                state.gameState = GameEndOverTransition;
+                state.endTime = state.time;
+                state.time = 0;
+              }
+            }
+          }
+        }
+      }
+    }
+    swap(state.grid, nextGrid);
+  }
+
   constexpr int StartX = -50;
   constexpr int StartY = 40;
   constexpr int EndX = 50;
