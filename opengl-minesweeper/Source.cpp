@@ -401,7 +401,7 @@ void display_Playing() {
         str += "[Normal Mode] F1: Easy, F2: Medium, F3: Hard  [Assisted Mode] F4: Easy, F5: Medium, F6: Hard";
       }
       else {
-        str += "[How to Play] Enter: Dig, F: Toggle Flag, Q: Toggle Question, Space: Magnify";
+        str += "[How to Play] Enter: Open, F: Toggle Flag, Q: Toggle Question, Space: Magnify, R: Restart";
       }
       drawString(str, -60, -44, 0, 1.3 * str.size(), 1);
     }
@@ -440,6 +440,15 @@ void display_Playing() {
     double y = StartY + SquareHeight * state.cursor.first + SquareHeight / 2;
     state.cameraTo = make_tuple(x, y, 30);
   }
+}
+
+void initializeGameState() {
+  state.gameState = GamePlaying;
+  state.cursor = { 0, 0 };
+  state.endTime = 0;
+  state.grid = array<array<bitset<GridBit>, GridWidth>, GridHeight>();
+  state.isGridInitialized = false;
+  state.time = 0;
 }
 
 void display_GameEnd() {
@@ -486,12 +495,7 @@ void display_GameEnd() {
 
   if (state.key.test(Key_Enter)) {
     // Initialize
-    state.gameState = GamePlaying;
-    state.cursor = { 0, 0 };
-    state.endTime = 0;
-    state.grid = array<array<bitset<GridBit>, GridWidth>, GridHeight>();
-    state.isGridInitialized = false;
-    state.time = 0;
+    initializeGameState();
   }
 }
 
@@ -643,6 +647,12 @@ void handleKeyboard(unsigned char key, int _x, int _y) {
       if (!state.isGridInitialized) break;
       state.grid[i][j].reset(Grid_Flag);
       state.grid[i][j].flip(Grid_Question);
+      break;
+
+    case 'R':
+    case 'r':
+      if (!state.isGridInitialized) break;
+      initializeGameState();
       break;
   }
 }
