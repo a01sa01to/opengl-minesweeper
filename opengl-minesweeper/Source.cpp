@@ -80,6 +80,7 @@ struct State {
   bool isGridInitialized = false;
   ll endTime = 0;
   int remBomb = BombCount;
+  bool isAssisted = false;
 };
 State state = State();
 
@@ -341,15 +342,17 @@ void display_Playing() {
       str += to_string((state.gameState == GamePlaying ? state.time : state.endTime) / 1000) + ", Bombs Remaining: " + to_string(state.remBomb);
       switch (BombCount) {
         case GridSquares* ModeEasy / 100:
-          str += " [Easy]";
+          str += " [Easy";
           break;
         case GridSquares* ModeMedium / 100:
-          str += " [Medium]";
+          str += " [Medium";
           break;
         case GridSquares* ModeHard / 100:
-          str += " [Hard]";
+          str += " [Hard";
           break;
       }
+      if (state.isAssisted) str += ", Assisted";
+      str += "]";
       drawMonoString(str, -60, -40, 0, 3 * str.size(), 1);
     }
     glPopMatrix();
@@ -358,7 +361,7 @@ void display_Playing() {
       glColor3d(1, 1, 1);
       string str = "";
       if (!state.isGridInitialized) {
-        str += "[Mode] F1: Easy, F2: Medium, F3: Hard";
+        str += "[Normal Mode] F1: Easy, F2: Medium, F3: Hard  [Assisted Mode] F4: Easy, F5: Medium, F6: Hard";
       }
       else {
         str += "[How to Play] Enter: Dig, F: Toggle Flag, Q: Toggle Question, Space: Magnify";
@@ -528,24 +531,36 @@ void handleKeyboardSp(int key, int _x, int _y) {
       state.key.set(Key_Up);
       state.cursor.first--;
       break;
+
     case GLUT_KEY_DOWN:
       state.key.set(Key_Down);
       state.cursor.first++;
       break;
+
     case GLUT_KEY_LEFT:
       state.key.set(Key_Left);
       state.cursor.second--;
       break;
+
     case GLUT_KEY_RIGHT:
       state.key.set(Key_Right);
       state.cursor.second++;
       break;
+
+    case GLUT_KEY_F4:
+      if (!state.isGridInitialized) state.isAssisted = true;
     case GLUT_KEY_F1:
       if (!state.isGridInitialized) BombCount = GridSquares * ModeEasy / 100;
       break;
+
+    case GLUT_KEY_F5:
+      if (!state.isGridInitialized) state.isAssisted = true;
     case GLUT_KEY_F2:
       if (!state.isGridInitialized) BombCount = GridSquares * ModeMedium / 100;
       break;
+
+    case GLUT_KEY_F6:
+      if (!state.isGridInitialized) state.isAssisted = true;
     case GLUT_KEY_F3:
       if (!state.isGridInitialized) BombCount = GridSquares * ModeHard / 100;
       break;
@@ -565,7 +580,8 @@ void handleKeyboard(unsigned char key, int _x, int _y) {
   auto&& [i, j] = state.cursor;
   switch (key) {
     case 32: state.key.set(Key_Space); break;  // Space
-    case 13:                                   // Enter
+
+    case 13:  // Enter
       state.key.set(Key_Enter);
       if (state.grid[i][j].test(Grid_Flag) || state.grid[i][j].test(Grid_Open)) break;
       state.grid[i][j].reset(Grid_Question);
@@ -577,12 +593,14 @@ void handleKeyboard(unsigned char key, int _x, int _y) {
         state.time = 0;
       }
       break;
+
     case 'F':
     case 'f':
       if (!state.isGridInitialized) break;
       state.grid[i][j].reset(Grid_Question);
       state.grid[i][j].flip(Grid_Flag);
       break;
+
     case 'Q':
     case 'q':
       if (!state.isGridInitialized) break;
