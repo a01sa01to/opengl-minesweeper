@@ -272,7 +272,9 @@ void display_Playing() {
       }
     }
 
-    if ((state.gameState == GameEndOverTransition || state.gameState == GameEndClearTransition || state.gameState == GameClear || state.gameState == GameOver) && state.grid[i][j].test(Grid_Bomb)) {
+    if (
+      (state.gameState == GameEndOverTransition || state.gameState == GameEndClearTransition || state.gameState == GameClear || state.gameState == GameOver)
+      && state.grid[i][j].test(Grid_Bomb)) {
       glPushMatrix();
       constexpr int transitionDuration = 500;
       double t = (double) state.time / transitionDuration;
@@ -324,6 +326,13 @@ void display_Playing() {
         glTranslated(SquareWidth / 2.5, -SquareHeight / 5, 0);
         drawMonoString("!", x, y + SquareHeight, 0, CharWidth, 2);
         glPopMatrix();
+        if (state.gameState != GamePlaying) {
+          glPushMatrix();
+          glColor3d(1, 0.2, 0.2);
+          glBegin(GL_LINES), glVertex2d(x, y), glVertex2d(x + SquareWidth, y + SquareHeight), glEnd();
+          glBegin(GL_LINES), glVertex2d(x + SquareWidth, y), glVertex2d(x, y + SquareHeight), glEnd();
+          glPopMatrix();
+        }
       }
     }
     else {
