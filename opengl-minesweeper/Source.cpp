@@ -619,6 +619,7 @@ void handleKeyboardSpUp(int key, int _x, int _y) {
 }
 void handleKeyboard(unsigned char key, int _x, int _y) {
   auto&& [i, j] = state.cursor;
+  key = toupper(key);
   switch (key) {
     case 32: state.key.set(Key_Space); break;  // Space
 
@@ -636,21 +637,18 @@ void handleKeyboard(unsigned char key, int _x, int _y) {
       break;
 
     case 'F':
-    case 'f':
       if (!state.isGridInitialized) break;
       state.grid[i][j].reset(Grid_Question);
       state.grid[i][j].flip(Grid_Flag);
       break;
 
     case 'Q':
-    case 'q':
       if (!state.isGridInitialized) break;
       state.grid[i][j].reset(Grid_Flag);
       state.grid[i][j].flip(Grid_Question);
       break;
 
     case 'R':
-    case 'r':
       if (!state.isGridInitialized) break;
       initializeGameState();
       break;
