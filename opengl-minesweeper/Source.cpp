@@ -638,12 +638,14 @@ void handleKeyboard(unsigned char key, int _x, int _y) {
 
     case 'F':
       if (!state.isGridInitialized) break;
+      if (state.grid[i][j].test(Grid_Open)) break;
       state.grid[i][j].reset(Grid_Question);
       state.grid[i][j].flip(Grid_Flag);
       break;
 
     case 'Q':
       if (!state.isGridInitialized) break;
+      if (state.grid[i][j].test(Grid_Open)) break;
       state.grid[i][j].reset(Grid_Flag);
       state.grid[i][j].flip(Grid_Question);
       break;
