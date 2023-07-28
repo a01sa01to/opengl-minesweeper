@@ -518,6 +518,7 @@ void display_GameEnd() {
 
   if (state.key.test(Key_Enter)) {
     // Initialize
+    state.key.reset();
     initializeGameState();
   }
 }
