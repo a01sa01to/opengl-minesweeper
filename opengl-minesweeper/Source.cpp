@@ -591,26 +591,28 @@ void display() {
 }
 
 void handleKeyboardSp(int key, int _x, int _y) {
-  switch (key) {
-    case GLUT_KEY_UP:
-      state.key.set(Key_Up);
-      state.cursor.first--;
-      break;
+  if (state.gameState == GamePlaying) {
+    switch (key) {
+      case GLUT_KEY_UP:
+        state.key.set(Key_Up);
+        state.cursor.first--;
+        break;
 
-    case GLUT_KEY_DOWN:
-      state.key.set(Key_Down);
-      state.cursor.first++;
-      break;
+      case GLUT_KEY_DOWN:
+        state.key.set(Key_Down);
+        state.cursor.first++;
+        break;
 
-    case GLUT_KEY_LEFT:
-      state.key.set(Key_Left);
-      state.cursor.second--;
-      break;
+      case GLUT_KEY_LEFT:
+        state.key.set(Key_Left);
+        state.cursor.second--;
+        break;
 
-    case GLUT_KEY_RIGHT:
-      state.key.set(Key_Right);
-      state.cursor.second++;
-      break;
+      case GLUT_KEY_RIGHT:
+        state.key.set(Key_Right);
+        state.cursor.second++;
+        break;
+    }
   }
   if (!state.isGridInitialized) {
     switch (key) {
@@ -659,21 +661,23 @@ void handleKeyboardSpUp(int key, int _x, int _y) {
 void handleKeyboard(unsigned char key, int _x, int _y) {
   auto&& [i, j] = state.cursor;
   key = toupper(key);
+
+  if (key == 13) {  //  Enter
+    state.key.set(Key_Enter);
+    if (state.grid[i][j].test(Grid_Flag) || state.grid[i][j].test(Grid_Open)) return;
+    state.grid[i][j].reset(Grid_Question);
+    state.grid[i][j].reset(Grid_Flag);
+    state.grid[i][j].set(Grid_Open);
+    if (state.gameState == GamePlaying && state.grid[i][j].test(Grid_Bomb)) {
+      state.gameState = GameEndOverTransition;
+      state.endTime = state.time;
+      state.time = 0;
+    }
+  }
+  if (state.gameState != GamePlaying) return;
+
   switch (key) {
     case 32: state.key.set(Key_Space); break;  // Space
-
-    case 13:  // Enter
-      state.key.set(Key_Enter);
-      if (state.grid[i][j].test(Grid_Flag) || state.grid[i][j].test(Grid_Open)) break;
-      state.grid[i][j].reset(Grid_Question);
-      state.grid[i][j].reset(Grid_Flag);
-      state.grid[i][j].set(Grid_Open);
-      if (state.gameState == GamePlaying && state.grid[i][j].test(Grid_Bomb)) {
-        state.gameState = GameEndOverTransition;
-        state.endTime = state.time;
-        state.time = 0;
-      }
-      break;
 
     case 'F':
       if (!state.isGridInitialized) break;
